@@ -27,4 +27,6 @@ function getConfigs(string $path = DIR_CONFIG): array
     }
     return $settings;
 }
+
+
 return new Src\Application(new Src\Settings(getConfigs()));
