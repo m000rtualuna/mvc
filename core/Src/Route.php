@@ -35,6 +35,6 @@ class Route
         if (!method_exists($class, $action)) {
             throw new Error('This method does not exist');
         }
-        call_user_func([new $class, $action]);
+        call_user_func([new $class, $action], new Request());
     }
 }
