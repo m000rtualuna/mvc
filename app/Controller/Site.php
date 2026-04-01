@@ -9,9 +9,9 @@ use Src\View;
 
 class Site
 {
-    public function index(Request $request): string
+    public function index(): string
     {
-        $posts = Post::where('id', $request->id ?? 0)->get();
+        $posts = Post::all();
         return (new View())->render('site.post', ['posts' => $posts]);
     }
     public function hello(): string
@@ -21,9 +21,10 @@ class Site
 
     public function signup(Request $request): string
     {
-        if ($request->method === 'POST' && User::create($request ->all())){
-        return new View('site.signup', ['message' => 'Вы успешно зарегистрированы']);
+        if ($request->method === 'POST' && User::create($request->all()))
+        {
+            app()->route->redirect('/go');
+        }
+        return new View('site.signup');
     }
-    return new View('site.signup');
-}
 }
