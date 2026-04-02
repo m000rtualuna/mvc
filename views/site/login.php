@@ -1,3 +1,4 @@
+<div class="form-container">
 <h2>Авторизация</h2>
 <h3><?= $message ?? ''; ?></h3>
 
@@ -8,6 +9,7 @@ if (!app()->auth::check()):
 <form method="post">
 <label>Логин <input type="text" name="login"></label>
 <label>Пароль <input type="password" name="password"></label>
-<button>Войти</button>
+<button class="btn">Войти</button>
 </form>
+</div>
 <?php endif;
