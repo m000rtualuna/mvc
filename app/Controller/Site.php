@@ -4,17 +4,32 @@ namespace Controller;
 
 use Model\Subdivision;
 use Model\User;
+use Model\Room;
+use Model\Telephone;
 use Src\Request;
 use Src\View;
 use Src\Auth\Auth;
 
 class Site
 {
-    public function index(): string
+    public function subdivision(): string
     {
         $subdivisions = Subdivision::all();
         return (new View())->render('site.subdivision', ['subdivisions' => $subdivisions]);
     }
+
+    public function room() : string
+    {
+        $room = Room::all();
+        return (new View())->render('site.room', ['room' => $room]);
+    }
+
+    public function telephone() : string
+    {
+        $telephone = Telephone::all();
+        return (new View())->render('site.telephone', ['telephone' => $telephone]);
+    }
+
     public function hello(): string
     {
         return new View('site.hello', ['message' => 'hello working']);
