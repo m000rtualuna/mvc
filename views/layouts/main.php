@@ -12,25 +12,30 @@
 
 <header>
     <nav>
-        <?php
-        if (!app()->auth::check()):
-            ?>
+        <?php if (!app()->auth::check()): ?>
             <a href="<?= app()->route->getUrl('/login') ?>">Вход</a>
             <a href="<?= app()->route->getUrl('/signup') ?>">Регистрация</a>
-        <?php
-        else:
+        <?php else: ?>
+            <?php
+            $user = app()->auth->user() ?? null;
             ?>
-            <a href="<?= app()->route->getUrl('/subscribers') ?>">Абоненты</a>
-            <a href="<?= app()->route->getUrl('/subdivisions') ?>">Подразделения</a>
-            <a href="<?= app()->route->getUrl('/rooms') ?>">Помещения</a>
-            <a href="<?= app()->route->getUrl('/telephones') ?>">Телефоны</a>
-
+            <?php if ($user && $user->role == 2): ?>
+                <a href="<?= app()->route->getUrl('/subscribers') ?>">Абоненты</a>
+                <a href="<?= app()->route->getUrl('/rooms') ?>">Помещения</a>
+                <a href="<?= app()->route->getUrl('/telephones') ?>">Телефоны</a>
+                <a href="<?= app()->route->getUrl('/subdivisions') ?>">Подразделения</a>
+            <?php endif; ?>
+            <?php if ($user && $user->role == 1): ?>
+                <a href="<?= app()->route->getUrl('/users') ?>">Пользователи</a>
+            <?php endif; ?>
             <a href="<?= app()->route->getUrl('/logout') ?>">Выход</a>
-        <?php
-        endif;
-        ?>
+        <?php endif; ?>
     </nav>
-    <p>Этот пользователь: <?= app()->auth::user()->name ?></p>
+    <?php
+    if (app()->auth->check()) {
+        echo '<p>Этот пользователь: ' . htmlspecialchars(app()->auth->user()->name) . '</p>';
+    }
+    ?>
 </header>
 
 <main>

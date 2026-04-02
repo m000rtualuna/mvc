@@ -37,6 +37,12 @@ class Site
         return (new View())->render('site.subscriber', ['subscribers' => $subscribers]);
     }
 
+    public function user() : string
+    {
+        $users = User::all();
+        return (new View())->render('site.user', ['users' => $users]);
+    }
+
     public function hello(): string
     {
         return new View('site.hello', ['message' => 'hello working']);
@@ -44,30 +50,53 @@ class Site
 
     public function signup(Request $request): string
     {
-        if ($request->method === 'POST' && User::create($request->all()))
-        {
-            app()->route->redirect('/subscribers');
+        if ($request->method === 'POST' && User::create($request->all())) {
+            // Войти под новым пользователем
+            Auth::attempt($request->all());
+
+            $user = Auth::user();
+
+            // Редиректы в зависимости от роли
+            if ($user->role == 1) {
+                app()->route->redirect('/admin-dashboard');
+            } elseif ($user->role == 2) {
+                app()->route->redirect('/subscribers');
+            } else {
+                app()->route->redirect('/hello');
+            }
         }
         return new View('site.signup');
     }
 
     public function login(Request $request): string
     {
-        //Если просто обращение к странице, то отобразить форму
+        // Если просто обращение к странице, то отобразить форму
         if ($request->method === 'GET') {
             return new View('site.login');
         }
-        //Если удалось аутентифицировать пользователя, то редирект
+
+        // Пытаемся аутентифицировать пользователя
         if (Auth::attempt($request->all())) {
-            app()->route->redirect('/subscribers');
+            $user = Auth::user();
+
+            // В зависимости от роли делаем редирект
+            if ($user->role == 1) {
+                app()->route->redirect('/users');
+            } elseif ($user->role == 2) {
+                app()->route->redirect('/subscribers');
+            } else {
+                // Например, если роль неизвестная, редирект на главную
+                app()->route->redirect('/hello');
+            }
         }
-        //Если аутентификация не удалась, то сообщение об ошибке
+
+        // Если аутентификация не удалась
         return new View('site.login', ['message' => 'Неправильные логин или пароль']);
     }
 
     public function logout(): void
     {
         Auth::logout();
-        app()->route->redirect('/hello');
+        app()->route->redirect('/login');
     }
 }
