@@ -7,14 +7,13 @@
         <th>Абонент</th>
     </tr>
     </thead>
-
     <tbody>
     <?php
-    foreach ($telephone as $telephone) {
+    foreach ($telephones as $telephone) {
         echo '<tr>';
-        echo '<td>' . htmlspecialchars($telephone->phone_number) . '</td>';
-        echo '<td>' . htmlspecialchars($telephone->room) . '</td>';
-        echo '<td>' . htmlspecialchars($telephone->user->name) . '</td>';
+        echo '<td>' . htmlspecialchars($telephone->phone_number ?? '-') . '</td>';
+        echo '<td>' . htmlspecialchars($telephone->room->name ?? '-') . '</td>';
+        echo '<td>' . htmlspecialchars($telephone->subscriber->name ?? '-') . '</td>';
         echo '</tr>';
     }
     ?>

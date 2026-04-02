@@ -11,8 +11,8 @@
     <?php
     foreach ($subdivisions as $subdivision) {
         echo '<tr>';
-        echo '<td>' . htmlspecialchars($subdivision->name) . '</td>';
-        echo '<td>' . htmlspecialchars($subdivision->type) . '</td>';
+        echo '<td>' . htmlspecialchars($subdivision->name ?? '-') . '</td>';
+        echo '<td>' . htmlspecialchars($subdivision->type ?? '-') . '</td>';
         echo '</tr>';
     }
     ?>

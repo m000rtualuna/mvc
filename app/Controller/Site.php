@@ -5,6 +5,7 @@ namespace Controller;
 use Model\Subdivision;
 use Model\User;
 use Model\Room;
+use Model\Subscriber;
 use Model\Telephone;
 use Src\Request;
 use Src\View;
@@ -20,14 +21,20 @@ class Site
 
     public function room() : string
     {
-        $room = Room::all();
-        return (new View())->render('site.room', ['room' => $room]);
+        $rooms = Room::all();
+        return (new View())->render('site.room', ['room' => $rooms]);
     }
 
     public function telephone() : string
     {
-        $telephone = Telephone::all();
-        return (new View())->render('site.telephone', ['telephone' => $telephone]);
+        $telephones = Telephone::with(['subscriber', 'room'])->get();
+        return (new View())->render('site.telephone', ['telephones' => $telephones]);
+    }
+
+    public function subscriber() : string
+    {
+        $subscribers = Subscriber::all();
+        return (new View())->render('site.subscriber', ['subscribers' => $subscribers]);
     }
 
     public function hello(): string
@@ -39,7 +46,7 @@ class Site
     {
         if ($request->method === 'POST' && User::create($request->all()))
         {
-            app()->route->redirect('/go');
+            app()->route->redirect('/subscribers');
         }
         return new View('site.signup');
     }
@@ -52,7 +59,7 @@ class Site
         }
         //Если удалось аутентифицировать пользователя, то редирект
         if (Auth::attempt($request->all())) {
-            app()->route->redirect('/hello');
+            app()->route->redirect('/subscribers');
         }
         //Если аутентификация не удалась, то сообщение об ошибке
         return new View('site.login', ['message' => 'Неправильные логин или пароль']);

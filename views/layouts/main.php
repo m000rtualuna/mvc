@@ -12,7 +12,6 @@
 
 <header>
     <nav>
-        <a href="<?= app()->route->getUrl('/hello') ?>">Главная</a>
         <?php
         if (!app()->auth::check()):
             ?>
@@ -21,12 +20,17 @@
         <?php
         else:
             ?>
-            <a href="<?= app()->route->getUrl('/go') ?>">Подразделения</a>
-            <a href="<?= app()->route->getUrl('/logout') ?>">Выход (<?= app()->auth::user()->name ?>)</a>
+            <a href="<?= app()->route->getUrl('/subscribers') ?>">Абоненты</a>
+            <a href="<?= app()->route->getUrl('/subdivisions') ?>">Подразделения</a>
+            <a href="<?= app()->route->getUrl('/rooms') ?>">Помещения</a>
+            <a href="<?= app()->route->getUrl('/telephones') ?>">Телефоны</a>
+
+            <a href="<?= app()->route->getUrl('/logout') ?>">Выход</a>
         <?php
         endif;
         ?>
     </nav>
+    <p>Этот пользователь: <?= app()->auth::user()->name ?></p>
 </header>
 
 <main>
