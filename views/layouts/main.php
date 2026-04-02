@@ -21,6 +21,7 @@
         <?php
         else:
             ?>
+            <a href="<?= app()->route->getUrl('/go') ?>">Подразделения</a>
             <a href="<?= app()->route->getUrl('/logout') ?>">Выход (<?= app()->auth::user()->name ?>)</a>
         <?php
         endif;

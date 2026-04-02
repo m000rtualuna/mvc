@@ -2,7 +2,7 @@
 
 namespace Controller;
 
-use Model\Post;
+use Model\Subdivision;
 use Model\User;
 use Src\Request;
 use Src\View;
@@ -12,8 +12,8 @@ class Site
 {
     public function index(): string
     {
-        $posts = Post::all();
-        return (new View())->render('site.post', ['posts' => $posts]);
+        $subdivisions = Subdivision::all();
+        return (new View())->render('site.subdivision', ['subdivisions' => $subdivisions]);
     }
     public function hello(): string
     {
