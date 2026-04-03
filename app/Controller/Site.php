@@ -103,22 +103,44 @@ class Site
         ]);
     }
 
-    public function hello(): string
+    public function main(): string
     {
-        return new View('site.hello', ['message' => 'У вас нет прав :(']);
+        return new View('site.main', ['message' => 'У вас нет прав :(']);
     }
 
     public function signup(Request $request): string
     {
-        if ($request->method === 'POST' && User::create($request->all())) {
-            // Войти под новым пользователем
-            Auth::attempt($request->all());
+        $errors = [];
 
-            $user = Auth::user();
+        if ($request->method === 'POST') {
+            $login = $request->get('login') ?? '';
+            $password = $request->get('password') ?? '';
 
-                app()->route->redirect('/hello');
+            if (strlen($login) < 5 || strlen($login) > 15) {
+                $errors[] = 'Логин должен быть от 5 до 15 символов';
+            }
+
+            if (User::where('login', $login)->first()) {
+                $errors[] = 'Пользователь с таким логином уже существует';
+            }
+
+            if (strlen($password) < 5) {
+                $errors[] = 'Пароль должен быть не менее 5 символов';
+            }
+
+            if (empty($errors)) {
+                if (User::create($request->all())) {
+                    Auth::attempt($request->all());
+                    app()->route->redirect('/main');
+                }
+            }
         }
-        return new View('site.signup');
+
+        // Передаем ошибки в представление
+        return new View('site.signup', [
+            'errors' => $errors,
+            'message' => !empty($errors) ? 'Ошибка регистрации' : ''
+        ]);
     }
 
     public function login(Request $request): string
@@ -139,7 +161,7 @@ class Site
                 app()->route->redirect('/subscribers');
             } else {
                 // Например, если роль неизвестная, редирект на главную
-                app()->route->redirect('/hello');
+                app()->route->redirect('/main');
             }
         }
 

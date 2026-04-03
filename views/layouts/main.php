@@ -33,7 +33,7 @@
     </nav>
     <?php
     if (app()->auth->check()) {
-        echo '<p>Этот пользователь: ' . htmlspecialchars(app()->auth->user()->name) . '</p>';
+        echo '<p>Этот пользователь: ' . htmlspecialchars(app()->auth->user()->login) . '</p>';
     }
     ?>
 </header>
