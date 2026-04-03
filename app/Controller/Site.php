@@ -34,7 +34,26 @@ class Site
     public function subscriber() : string
     {
         $subscribers = Subscriber::all();
-        return (new View())->render('site.subscriber', ['subscribers' => $subscribers]);
+
+        $counts = [];
+        $subdivisions = Subdivision::all();
+        foreach ($subdivisions as $subdivision) {
+            $counts[$subdivision->id] = Subscriber::where('subdivision', $subdivision->id)->count();
+        }
+
+        $roomCounts = [];
+        $rooms = Room::all();
+        foreach ($rooms as $room) {
+            $roomCounts[$room->id] = Subscriber::where('room', $room->id)->count();
+        }
+
+        return (new View())->render('site.subscriber', [
+            'subscribers'  => $subscribers,
+            'counts'       => $counts,
+            'subdivisions' => $subdivisions,
+            'roomCounts'   => $roomCounts,
+            'rooms'        => $rooms,
+        ]);
     }
 
     public function user() : string

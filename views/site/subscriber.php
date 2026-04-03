@@ -1,3 +1,21 @@
+<h3>Абоненты по подразделениям:</h3>
+<ul>
+    <?php foreach ($subdivisions as $sub): ?>
+        <li>
+            <?= $sub->name ?>: <?= $counts[$sub->id] ?> абонентов
+        </li>
+    <?php endforeach; ?>
+</ul>
+
+<h3>Абоненты по помещениям:</h3>
+<ul>
+    <?php foreach ($rooms as $room): ?>
+        <li>
+            <?= $room->name ?>: <?= $roomCounts[$room->id] ?> абонентов
+        </li>
+    <?php endforeach; ?>
+</ul>
+
 <h1>Абоненты</h1>
 <table border="2" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 60%; text-align: center;">
     <thead>
