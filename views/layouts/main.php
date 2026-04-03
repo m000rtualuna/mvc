@@ -19,13 +19,13 @@
             <?php
             $user = app()->auth->user() ?? null;
             ?>
-            <?php if ($user && $user->role == 2): ?>
+            <?php if ($user && $user->role_id == 2): ?>
                 <a href="<?= app()->route->getUrl('/subscribers') ?>">Абоненты</a>
                 <a href="<?= app()->route->getUrl('/rooms') ?>">Помещения</a>
                 <a href="<?= app()->route->getUrl('/telephones') ?>">Телефоны</a>
                 <a href="<?= app()->route->getUrl('/subdivisions') ?>">Подразделения</a>
             <?php endif; ?>
-            <?php if ($user && $user->role == 1): ?>
+            <?php if ($user && $user->role_id == 3): ?>
                 <a href="<?= app()->route->getUrl('/users') ?>">Пользователи</a>
             <?php endif; ?>
             <a href="<?= app()->route->getUrl('/logout') ?>">Выход</a>

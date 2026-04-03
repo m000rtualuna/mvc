@@ -5,6 +5,7 @@ namespace Controller;
 use Model\Subdivision;
 use Model\User;
 use Model\Room;
+use Model\Role;
 use Model\Subscriber;
 use Model\Telephone;
 use Src\Request;
@@ -56,15 +57,55 @@ class Site
         ]);
     }
 
-    public function user() : string
+    public function user(): string
     {
-        $users = User::all();
-        return (new View())->render('site.user', ['users' => $users]);
+        // Обрабатываем POST‑запрос на обновление роли
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role_id'])) {
+            $userId = (int)$_POST['user_id'];
+            $roleId = (int)$_POST['role_id'];
+
+            // Получаем текущего авторизованного пользователя
+            $currentUser = Auth::user();
+
+            // Проверяем: если пользователь пытается изменить свою роль — запрещаем
+            if ($currentUser && $userId === $currentUser->id) {
+                // Можно добавить сообщение об ошибке в сессию или передать в шаблон
+                $_SESSION['error'] = 'Вы не можете изменить свою собственную роль';
+
+
+                // Перенаправляем обратно на страницу
+                header('Location: /users');
+                exit;
+            }
+
+            // Если это другой пользователь — обновляем роль
+            $user = User::find($userId);
+            if ($user) {
+                $user->updateRole($roleId);
+            }
+
+            // После обработки делаем редирект
+            header('Location: /users');
+            exit;
+        }
+
+        // Загружаем актуальные данные для отображения
+        $users = User::with(['role'])->get();
+        $roles = Role::all();
+
+        $error = $_SESSION['error'] ?? null;
+        unset($_SESSION['error']); // Очищаем сообщение после использования
+
+        return (new View())->render('site.user', [
+            'users' => $users,
+            'roles' => $roles,
+            'error' => $error
+        ]);
     }
 
     public function hello(): string
     {
-        return new View('site.hello', ['message' => 'hello working']);
+        return new View('site.hello', ['message' => 'У вас нет прав :(']);
     }
 
     public function signup(Request $request): string
@@ -75,14 +116,7 @@ class Site
 
             $user = Auth::user();
 
-            // Редиректы в зависимости от роли
-            if ($user->role == 1) {
-                app()->route->redirect('/admin-dashboard');
-            } elseif ($user->role == 2) {
-                app()->route->redirect('/subscribers');
-            } else {
                 app()->route->redirect('/hello');
-            }
         }
         return new View('site.signup');
     }
@@ -99,9 +133,9 @@ class Site
             $user = Auth::user();
 
             // В зависимости от роли делаем редирект
-            if ($user->role == 1) {
+            if ($user->role_id == 3) {
                 app()->route->redirect('/users');
-            } elseif ($user->role == 2) {
+            } elseif ($user->role_id == 2) {
                 app()->route->redirect('/subscribers');
             } else {
                 // Например, если роль неизвестная, редирект на главную

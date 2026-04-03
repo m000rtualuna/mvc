@@ -2,6 +2,7 @@
 namespace Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+
 class Telephone extends Model
 {
     use HasFactory;
@@ -9,11 +10,11 @@ class Telephone extends Model
 
     public function subscriber()
     {
-        return $this->belongsTo(Subscriber::class, 'subscriber');
+        return $this->belongsTo(Subscriber::class, 'subscriber_id');
     }
 
     public function room()
     {
-        return $this->belongsTo(Room::class, 'room');
+        return $this->belongsTo(Room::class, 'room_id');
     }
 }

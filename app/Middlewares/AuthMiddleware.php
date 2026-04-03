@@ -20,9 +20,8 @@ class AuthMiddleware
         }
 
         // Получаем роль текущего пользователя
-        // Получаем роль пользователя
-        $userRole = Auth::user()->role; // например, int(2)
-        $requiredRoleId = (int)$requiredRole; // например, '1' преобразуется в 1
+        $userRole = Auth::user()->role_id;
+        $requiredRoleId = (int)$requiredRole;
 
         if ($userRole !== $requiredRoleId) {
             app()->route->redirect('/access-denied');

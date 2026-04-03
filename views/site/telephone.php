@@ -1,3 +1,11 @@
+<?php
+foreach ($telephones as $telephone) {
+    echo '<pre>';
+    var_dump($telephone->room);
+    echo '</pre>';
+}
+?>
+
 <h1>Телефоны</h1>
 <table border="2" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 60%; text-align: center;">
     <thead>
@@ -19,3 +27,5 @@
     ?>
     </tbody>
 </table>
+
+<?php var_dump($subscriber); ?>

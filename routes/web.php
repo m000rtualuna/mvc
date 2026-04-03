@@ -12,4 +12,4 @@ Route::add('GET', '/rooms', [Controller\Site::class, 'room'])->middleware('auth:
 Route::add('GET', '/telephones', [Controller\Site::class, 'telephone'])->middleware('auth:2');
 Route::add('GET', '/subdivisions', [Controller\Site::class, 'subdivision'])->middleware('auth:2');
 
-Route::add('GET', '/users', [Controller\Site::class, 'user'])->middleware('auth:1');
+Route::add(['GET', 'POST'], '/users', [Controller\Site::class, 'user'])->middleware('auth:3');
