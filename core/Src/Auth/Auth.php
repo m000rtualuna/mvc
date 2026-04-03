@@ -57,4 +57,12 @@ class Auth
         Session::clear('id');
         return true;
     }
+
+    //Генерация нового токена для CSRF
+    public static function generateCSRF(): string
+    {
+        $token = md5(time());
+        Session::set('csrf_token', $token);
+        return $token;
+    }
 }

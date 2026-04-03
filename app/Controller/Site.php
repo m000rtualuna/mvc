@@ -11,26 +11,121 @@ use Model\Telephone;
 use Src\Request;
 use Src\View;
 use Src\Auth\Auth;
+use Src\Validator\Validator;
 
 class Site
 {
+
     public function subdivision(): string
     {
+        $message = '';
+
+        // Обработка добавления подразделения
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subdivision_name'], $_POST['subdivision_type'])) {
+            $name = trim($_POST['subdivision_name']);
+            $type = trim($_POST['subdivision_type']);
+
+            // Валидация данных
+            if (empty($name)) {
+                $message = 'Название подразделения не может быть пустым';
+            } elseif (empty($type)) {
+                $message = 'Тип подразделения не может быть пустым';
+            } else {
+                // Создаём подразделение
+                Subdivision::create([
+                    'name' => $name,
+                    'type' => $type
+                ]);
+                $message = 'Подразделение добавлено';
+            }
+        }
+
         $subdivisions = Subdivision::all();
-        return (new View())->render('site.subdivision', ['subdivisions' => $subdivisions]);
+        return (new View())->render('site.subdivision', [
+            'subdivisions' => $subdivisions,
+            'message' => $message
+        ]);
+
+        $subdivisions = Subdivision::all();
+        return (new View())->render('site.subdivision', [
+            'subdivisions' => $subdivisions,
+            'message' => $message
+        ]);
     }
 
-    public function room() : string
+
+    public function room(): string
     {
+        $message = '';
+        $subdivisions = Subdivision::all();
+
+        // Обработка добавления помещения
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_name'], $_POST['room_number_room'], $_POST['room_type'], $_POST['room_subdivision_id'])) {
+            Room::create([
+                'name' => $_POST['room_name'],
+                'number_room' => $_POST['room_number_room'],
+                'type' => $_POST['room_type'],
+                'subdivision_id' => (int)$_POST['room_subdivision_id']
+            ]);
+            $message = 'Помещение добавлено';
+        }
+
+        $rooms = Room::with('subdivision')->get();
+        return (new View())->render('site.room', [
+            'rooms' => $rooms,
+            'subdivisions' => $subdivisions,
+            'message' => $message
+        ]);
+    }
+
+    public function telephone(): string
+    {
+        $message = '';
         $rooms = Room::all();
-        return (new View())->render('site.room', ['room' => $rooms]);
+        $subscribers = Subscriber::all();
+
+        // Обработка добавления телефона
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset(
+                $_POST['telephone_name'],
+                $_POST['telephone_phone_number'],
+                $_POST['telephone_room_id'],
+                $_POST['telephone_subscriber_id']
+            )) {
+            $name = trim($_POST['telephone_name']);
+            $phoneNumber = trim($_POST['telephone_phone_number']);
+            $roomId = (int)$_POST['telephone_room_id'];
+            $subscriberId = (int)$_POST['telephone_subscriber_id'];
+
+            // Валидация данных
+            if (empty($name)) {
+                $message = 'Название телефона не может быть пустым';
+            } elseif (empty($phoneNumber)) {
+                $message = 'Номер телефона не может быть пустым';
+            } elseif (!preg_match('/^\d{6,15}$/', $phoneNumber)) {
+                $message = 'Номер телефона должен содержать от 6 до 15 цифр';
+            } elseif ($roomId <= 0) {
+                $message = 'Выберите помещение';
+            } elseif ($subscriberId <= 0) {
+                $message = 'Выберите абонента';
+            } else {
+                Telephone::create([
+                    'name' => $name,
+                    'phone_number' => $phoneNumber,
+                    'room_id' => $roomId,
+                    'subscriber_id' => $subscriberId
+                ]);
+            }
+        }
+
+        $telephones = Telephone::with(['room', 'subscriber'])->get();
+        return (new View())->render('site.telephone', [
+            'telephones' => $telephones,
+            'rooms' => $rooms,
+            'subscribers' => $subscribers,
+            'message' => $message
+        ]);
     }
 
-    public function telephone() : string
-    {
-        $telephones = Telephone::with(['subscriber', 'room'])->get();
-        return (new View())->render('site.telephone', ['telephones' => $telephones]);
-    }
 
     public function subscriber() : string
     {
@@ -110,37 +205,24 @@ class Site
 
     public function signup(Request $request): string
     {
-        $errors = [];
-
         if ($request->method === 'POST') {
-            $login = $request->get('login') ?? '';
-            $password = $request->get('password') ?? '';
-
-            if (strlen($login) < 5 || strlen($login) > 15) {
-                $errors[] = 'Логин должен быть от 5 до 15 символов';
+            $validator = new Validator($request->all(), [
+                'login' => ['required', 'unique:users,login'],
+                'password' => ['required']
+            ], [
+                'required' => 'Поле :field пусто',
+                'unique' => 'Поле :field должно быть уникально'
+            ]);
+            if($validator->fails()){
+                return new View('site.signup',
+                    ['message' => json_encode($validator->errors(),
+                        JSON_UNESCAPED_UNICODE)]);
             }
-
-            if (User::where('login', $login)->first()) {
-                $errors[] = 'Пользователь с таким логином уже существует';
-            }
-
-            if (strlen($password) < 5) {
-                $errors[] = 'Пароль должен быть не менее 5 символов';
-            }
-
-            if (empty($errors)) {
-                if (User::create($request->all())) {
-                    Auth::attempt($request->all());
-                    app()->route->redirect('/main');
-                }
+            if (User::create($request->all())) {
+                app()->route->redirect('/signup');
             }
         }
-
-        // Передаем ошибки в представление
-        return new View('site.signup', [
-            'errors' => $errors,
-            'message' => !empty($errors) ? 'Ошибка регистрации' : ''
-        ]);
+        return new View('site.signup');
     }
 
     public function login(Request $request): string

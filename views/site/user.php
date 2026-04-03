@@ -2,7 +2,6 @@
 <table border="2" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 60%; text-align: center;">
     <thead>
     <tr>
-        <th>Имя пользователя</th>
         <th>Логин пользователя</th>
         <th>Роль пользователя</th>
     </tr>
@@ -10,7 +9,6 @@
     <tbody>
     <?php foreach ($users as $user): ?>
         <tr>
-            <td><?php echo htmlspecialchars($user->name ?? '-'); ?></td>
             <td><?php echo htmlspecialchars($user->login ?? '-'); ?></td>
             <td>
                 <form method="POST" action="/users">
@@ -25,7 +23,6 @@
                             </option>
                         <?php endforeach; ?>
                     </select>
-
                 </form>
             </td>
         </tr>

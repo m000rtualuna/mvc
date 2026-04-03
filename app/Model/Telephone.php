@@ -7,6 +7,7 @@ class Telephone extends Model
 {
     use HasFactory;
     public $timestamps = false;
+    protected $fillable = ['phone_number', 'room_id', 'subscriber_id'];
 
     public function subscriber()
     {

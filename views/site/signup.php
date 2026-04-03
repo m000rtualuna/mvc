@@ -1,17 +1,10 @@
 <div class="form-container">
     <h2>Регистрация нового пользователя</h2>
 
-    <!-- Вывод общего сообщения -->
     <h3><?= $message ?? ''; ?></h3>
-    <?php if (!empty($errors)): ?>
-        <ul>
-            <?php foreach ($errors as $error): ?>
-                <li><?= $error ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
 
     <form method="post">
+        <input name="csrf_token" type="hidden" value="<?= app()->auth::generateCSRF() ?>"/>
         <div class="form-el">
             <label>Логин
                 <input type="text" name="login" value="<?= $_POST['login'] ?? '' ?>">

@@ -12,6 +12,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 2em;
 }
 
 header {
@@ -24,8 +25,7 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 1em;
+    gap: 2em;
 }
 
 nav {
@@ -64,7 +64,7 @@ form {
     flex-direction: column;
 }
 
-.form-container input {
+.form-container input, select {
     width: 100%;
     background-color: #fffae8;
     height: 2em;
@@ -80,4 +80,14 @@ form {
 table th, table td {
     padding: 10px;
     text-align: center;
+}
+
+.container {
+    display: flex;
+    gap: 2em;
+}
+
+.container-inside {
+    display: flex;
+    flex-direction: column;
 }
