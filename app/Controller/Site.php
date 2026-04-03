@@ -206,24 +206,56 @@ class Site
     public function signup(Request $request): string
     {
         if ($request->method === 'POST') {
-            $validator = new Validator($request->all(), [
-                'login' => ['required', 'unique:users,login'],
-                'password' => ['required']
+            $data = $request->all();
+
+            $validator = new Validator($data, [
+                'login' => [
+                    'required',
+                    'unique:users,login',
+                    'length:5,15'
+                ],
+                'password' => [
+                    'required',
+                    'length:5'
+                ]
             ], [
                 'required' => 'Поле :field пусто',
-                'unique' => 'Поле :field должно быть уникально'
+                'unique' => 'Поле :field должно быть уникально',
+                'length' => 'Поле :field должно быть от 5 символов',
             ]);
-            if($validator->fails()){
-                return new View('site.signup',
-                    ['message' => json_encode($validator->errors(),
-                        JSON_UNESCAPED_UNICODE)]);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $errorMessage = '';
+
+                foreach ($errors as $field => $messages) {
+                    foreach ($messages as $message) {
+                        $errorMessage .= $message . '<br>';
+                    }
+                }
+
+                $errorMessage = rtrim($errorMessage, '; ');
+
+                return new View('site.signup', [
+                    'message' => $errorMessage,
+                    'data' => $data
+                ]);
             }
-            if (User::create($request->all())) {
-                app()->route->redirect('/signup');
+
+            try {
+                if (User::create($data)) {
+                    app()->route->redirect('/signup');
+                } else {
+                    return new View('site.signup', ['message' => 'Ошибка при создании пользователя']);
+                }
+            } catch (\Exception $e) {
+                return new View('site.signup', ['message' => 'Произошла ошибка: ' . $e->getMessage()]);
             }
         }
+
         return new View('site.signup');
     }
+
 
     public function login(Request $request): string
     {

@@ -12,7 +12,8 @@ return [
     ],
     'validators' => [
         'required' => \Validators\RequireValidator::class,
-        'unique' => \Validators\UniqueValidator::class
+        'unique' => \Validators\UniqueValidator::class,
+        'length' => \Validators\LengthValidator::class,
     ],
     'routeAppMiddleware' => [
         'csrf' => \Middlewares\CSRFMiddleware::class,
