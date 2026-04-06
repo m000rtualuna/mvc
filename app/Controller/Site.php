@@ -197,11 +197,10 @@ class Site
         return $labels[$field] ?? $field;
     }
 
-
     public function subscriber(): string
     {
+        $message = '';
         $subscribersQuery = Subscriber::with(['subdivision', 'telephone']);
-
 
         if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
             $searchTerm = trim($_GET['search']);
@@ -229,65 +228,79 @@ class Site
                 die('Ошибка безопасности: неверный CSRF‑токен');
             }
 
-            $requiredFields = [
-                'subscriber_name',
-                'subscriber_surname',
-                'subscriber_patronymic',
-                'subscriber_date_of_birth',
-                'subscriber_subdivision_id'
+            $request = new Request($_POST);
+            $middleware = new TrimMiddleware();
+            $request = $middleware->handle($request);
+            $data = $request->all();
+
+            $rules = [
+                'subscriber_name' => ['required', 'lang'],
+                'subscriber_surname' => ['required', 'lang'],
+                'subscriber_patronymic' => ['required', 'lang'],
+                'subscriber_date_of_birth' => ['required'],
+                'subscriber_subdivision_id' => ['required'],
             ];
 
-            foreach ($requiredFields as $field) {
-                if (!isset($_POST[$field]) || empty(trim($_POST[$field]))) {
-                    die("Не заполнено обязательное поле: $field");
+            $messages = [
+                'required' => 'Поле :field не заполнено',
+                'lang' => 'Поле :field должно содержать только кириллицу',
+            ];
+
+            $validator = new Validator($data, $rules, $messages);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $errorMessage = '';
+                foreach ($errors as $field => $msgs) {
+                    foreach ($msgs as $msg) {
+                        $errorMessage .= $msg . '<br>';
+                    }
                 }
-            }
+                $message = rtrim($errorMessage, '<br>');
+            } else {
+                try {
+                    $name = trim($data['subscriber_name']);
+                    $surname = trim($data['subscriber_surname']);
+                    $patronymic = trim($data['subscriber_patronymic']);
+                    $date_of_birth = trim($data['subscriber_date_of_birth']);
+                    $subdivision_id = (int)$data['subscriber_subdivision_id'];
 
-            try {
-                $name = trim($_POST['subscriber_name']);
-                $surname = trim($_POST['subscriber_surname']);
-                $patronymic = trim($_POST['subscriber_patronymic']);
-                $date_of_birth = trim($_POST['subscriber_date_of_birth']);
-                $subdivision_id = (int)$_POST['subscriber_subdivision_id'];
+                    $subscriber = Subscriber::create([
+                        'name' => $name,
+                        'surname' => $surname,
+                        'patronymic' => $patronymic,
+                        'date_of_birth' => $date_of_birth,
+                        'subdivision_id' => $subdivision_id,
+                    ]);
 
-                if (!Subdivision::find($subdivision_id)) {
-                    die('Указанное подразделение не существует');
-                }
+                    if (isset($_POST['phone_ids']) && is_array($_POST['phone_ids'])) {
+                        $selectedPhoneIds = array_map('intval', $_POST['phone_ids']);
 
-                $subscriber = Subscriber::create([
-                    'name' => $name,
-                    'surname' => $surname,
-                    'patronymic' => $patronymic,
-                    'date_of_birth' => $date_of_birth,
-                    'subdivision_id' => $subdivision_id,
-                ]);
+                        $availablePhones = Telephone::whereIn('id', $selectedPhoneIds)
+                            ->whereNull('subscriber_id')
+                            ->pluck('id')
+                            ->toArray();
 
-                if (isset($_POST['phone_ids']) && is_array($_POST['phone_ids'])) {
-                    $selectedPhoneIds = array_map('intval', $_POST['phone_ids']);
+                        if (empty($availablePhones)) {
+                            die('Выбранные номера уже заняты');
+                        }
 
-                    $availablePhones = Telephone::whereIn('id', $selectedPhoneIds)
-                        ->whereNull('subscriber_id')
-                        ->pluck('id')
-                        ->toArray();
-
-                    if (empty($availablePhones)) {
-                        die('Выбранные номера уже заняты');
+                        Telephone::whereIn('id', $availablePhones)
+                            ->update(['subscriber_id' => $subscriber->id]);
                     }
 
-                    Telephone::whereIn('id', $availablePhones)
-                        ->update(['subscriber_id' => $subscriber->id]);
+                    header('Location: ' . $_SERVER['REQUEST_URI']);
+                    exit;
+
+                } catch (\Exception $e) {
+                    error_log('Ошибка создания абонента: ' . $e->getMessage());
+                    error_log('Трассировка: ' . $e->getTraceAsString());
+                    die('Произошла ошибка при создании абонента.');
                 }
-
-                header('Location: ' . $_SERVER['REQUEST_URI']);
-                exit;
-
-            } catch (\Exception $e) {
-                error_log('Ошибка создания абонента: ' . $e->getMessage());
-                error_log('Трассировка: ' . $e->getTraceAsString());
-                die('Произошла ошибка при создании абонента. Код ошибки: ' . $e->getCode() . '. Сообщение: ' . $e->getMessage());
             }
         }
 
+        // Остальной код без изменений
         $phonesByDepartment = [];
         if (isset($_GET['department_id']) && !empty($_GET['department_id'])) {
             $departmentId = (int)$_GET['department_id'];
@@ -303,11 +316,13 @@ class Site
             'telephones' => $telephones,
             'phonesByDepartment' => $phonesByDepartment,
             'rooms' => $rooms,
+            'message' => $message,
         ]);
     }
 
     public function user(): string
     {
+        // Обработка изменения роли
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role_id'])) {
             $userId = (int)$_POST['user_id'];
             $roleId = (int)$_POST['role_id'];
@@ -329,6 +344,7 @@ class Site
             exit;
         }
 
+        // Загрузка данных для отображения
         $users = User::with(['role'])->get();
         $roles = Role::all();
 

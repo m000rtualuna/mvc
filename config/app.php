@@ -16,6 +16,7 @@ return [
         'length' => Validators\LengthValidator::class,
         'lang' => Validators\LangValidator::class,
         'num' => Validators\NumValidator::class,
+        'data' => Validators\DateValidator::class,
     ],
     'routeAppMiddleware' => [
         'csrf' => Middlewares\CSRFMiddleware::class,
