@@ -78,14 +78,48 @@ class Site
         $message = '';
         $subdivisions = Subdivision::all();
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_name'], $_POST['room_number_room'], $_POST['room_type'], $_POST['room_subdivision_id'])) {
-            Room::create([
-                'name' => $_POST['room_name'],
-                'number_room' => $_POST['room_number_room'],
-                'type' => $_POST['room_type'],
-                'subdivision_id' => (int)$_POST['room_subdivision_id']
-            ]);
-            $message = 'Помещение добавлено';
+        $request = new Request($_POST);
+
+        $middleware = new TrimMiddleware();
+        $request = $middleware->handle($request);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = $request->all();
+
+            $rules = [
+                'room_name'           => ['required', 'lang'],
+                'room_number_room'    => ['required', 'num', 'unique:rooms,number_room'],
+                'room_type'           => ['required', 'lang'],
+                'room_subdivision_id' => ['required'],
+            ];
+
+            $messages = [
+                'required' => 'Поле :field не заполнено',
+                'lang' => 'Поле :field должно содержать только кириллицу',
+                'unique' => 'Поле :field должно быть уникальным',
+                'num' => 'Поле :field должно быть числом',
+            ];
+
+            $validator = new Validator($data, $rules, $messages);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $errorMessage = '';
+                foreach ($errors as $field => $msgs) {
+                    foreach ($msgs as $msg) {
+                        $errorMessage .= $msg . '<br>';
+                    }
+                }
+                $message = rtrim($errorMessage, '<br>');
+            } else {
+                Room::create([
+                    'name' => $data['room_name'],
+                    'number_room' => $data['room_number_room'],
+                    'type' => $data['room_type'],
+                    'subdivision_id' => (int)$data['room_subdivision_id']
+                ]);
+                $message = 'Помещение добавлено';
+            }
         }
 
         $rooms = Room::with('subdivision')->get();
@@ -168,6 +202,7 @@ class Site
     {
         $subscribersQuery = Subscriber::with(['subdivision', 'telephone']);
 
+
         if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
             $searchTerm = trim($_GET['search']);
             $subscribersQuery->where(function($query) use ($searchTerm) {
@@ -185,7 +220,6 @@ class Site
         $subscribers = $subscribersQuery->get();
 
         $counts = [];
-        $subdivisions = Subdivision::all();
         $subdivisions = Subdivision::withCount('subscribers')->get();
         $telephones = Telephone::whereNull('subscriber_id')->get();
         $rooms = Room::withCount('subscribers')->get();
@@ -240,7 +274,6 @@ class Site
                         die('Выбранные номера уже заняты');
                     }
 
-                    // Обновляем только свободные номера
                     Telephone::whereIn('id', $availablePhones)
                         ->update(['subscriber_id' => $subscriber->id]);
                 }
@@ -275,7 +308,6 @@ class Site
 
     public function user(): string
     {
-        // Обработка изменения роли
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role_id'])) {
             $userId = (int)$_POST['user_id'];
             $roleId = (int)$_POST['role_id'];
@@ -297,7 +329,6 @@ class Site
             exit;
         }
 
-        // Загрузка данных для отображения
         $users = User::with(['role'])->get();
         $roles = Role::all();
 
