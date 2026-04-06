@@ -2,6 +2,11 @@
     <h1>Абоненты</h1>
 
     <form method="GET" action="" class="fltr" id="filterForm">
+        <div class="fltr-cntnr">
+            <input type="text" name="search" placeholder="Поиск по имени/фамилии" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+            <button type="submit" class="btn">Поиск</button>
+        </div>
+
         <select name="department_id" id="department_select" onchange="this.form.submit()">
             <option value="">Все подразделения</option>
             <?php foreach ($subdivisions as $subdivision): ?>

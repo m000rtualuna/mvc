@@ -166,8 +166,23 @@ class Site
 
     public function subscriber(): string
     {
-        $subscribers = Subscriber::with(['subdivision', 'telephone'])->get();
+        $subscribersQuery = Subscriber::with(['subdivision', 'telephone']);
 
+        if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
+            $searchTerm = trim($_GET['search']);
+            $subscribersQuery->where(function($query) use ($searchTerm) {
+                $query->where('name', 'like', "%$searchTerm%")
+                    ->orWhere('surname', 'like', "%$searchTerm%")
+                    ->orWhere('patronymic', 'like', "%$searchTerm%");
+            });
+        }
+
+        if (isset($_GET['department_id']) && !empty($_GET['department_id'])) {
+            $departmentId = (int)$_GET['department_id'];
+            $subscribersQuery->where('subdivision_id', $departmentId);
+        }
+
+        $subscribers = $subscribersQuery->get();
 
         $counts = [];
         $subdivisions = Subdivision::all();
@@ -257,7 +272,6 @@ class Site
             'rooms' => $rooms,
         ]);
     }
-
 
     public function user(): string
     {

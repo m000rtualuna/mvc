@@ -22,7 +22,6 @@ class Subscriber extends Model
 
     public function telephone()
     {
-        return $this->hasMany(Telephone::class, 'subscriber_id', 'id');
+        return $this->hasOne(Telephone::class);
     }
-
 }

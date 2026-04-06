@@ -142,3 +142,13 @@ table th, table td {
     align-items: center;
     justify-content: center;
 }
+
+.fltr-cntnr {
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+}
+
+.fltr-cntnr button {
+    padding: 0.4em;
+}
