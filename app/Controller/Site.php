@@ -2,16 +2,17 @@
 
 namespace Controller;
 
-use Model\Subdivision;
-use Model\User;
-use Model\Room;
 use Model\Role;
+use Model\Room;
+use Model\Subdivision;
 use Model\Subscriber;
 use Model\Telephone;
+use Model\User;
+use Src\Auth\Auth;
 use Src\Request;
 use Src\View;
-use Src\Auth\Auth;
-use Src\Validator\Validator;
+use Validator\Validator;
+use Middlewares\TrimMiddleware;
 
 class Site
 {
@@ -20,18 +21,42 @@ class Site
     {
         $message = '';
 
-        // Обработка добавления подразделения
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subdivision_name'], $_POST['subdivision_type'])) {
-            $name = trim($_POST['subdivision_name']);
-            $type = trim($_POST['subdivision_type']);
+        $request = new Request($_POST);
 
-            // Валидация данных
-            if (empty($name)) {
-                $message = 'Название подразделения не может быть пустым';
-            } elseif (empty($type)) {
-                $message = 'Тип подразделения не может быть пустым';
+        $middleware = new TrimMiddleware();
+        $request = $middleware->handle($request);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = $request->all();
+
+            $rules = [
+                'subdivision_name' => ['required', 'lang', 'unique:subdivisions,name'],
+                'subdivision_type' => ['required', 'lang', 'unique:subdivisions,type'],
+            ];
+
+            $messages = [
+                'required' => 'Поле :field не заполнено',
+                'lang' => 'Поле :field должно содержать только кириллицу',
+                'unique' => 'Поле :field должно быть уникальным'
+            ];
+
+            $validator = new Validator($data, $rules, $messages);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $errorMessage = '';
+
+                foreach ($errors as $field => $messages) {
+                    foreach ($messages as $msg) {
+                        $errorMessage .= $msg . '<br>';
+                    }
+                }
+
+                $message = rtrim($errorMessage, '<br>');
             } else {
-                // Создаём подразделение
+                $name = $data['subdivision_name'];
+                $type = $data['subdivision_type'];
+
                 Subdivision::create([
                     'name' => $name,
                     'type' => $type
@@ -41,25 +66,18 @@ class Site
         }
 
         $subdivisions = Subdivision::all();
-        return (new View())->render('site.subdivision', [
-            'subdivisions' => $subdivisions,
-            'message' => $message
-        ]);
 
-        $subdivisions = Subdivision::all();
         return (new View())->render('site.subdivision', [
             'subdivisions' => $subdivisions,
             'message' => $message
         ]);
     }
 
-
     public function room(): string
     {
         $message = '';
         $subdivisions = Subdivision::all();
 
-        // Обработка добавления помещения
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_name'], $_POST['room_number_room'], $_POST['room_type'], $_POST['room_subdivision_id'])) {
             Room::create([
                 'name' => $_POST['room_name'],
@@ -82,114 +100,195 @@ class Site
     {
         $message = '';
         $rooms = Room::all();
-        $subscribers = Subscriber::all();
 
-        // Обработка добавления телефона
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset(
-                $_POST['telephone_name'],
-                $_POST['telephone_phone_number'],
-                $_POST['telephone_room_id'],
-                $_POST['telephone_subscriber_id']
-            )) {
-            $name = trim($_POST['telephone_name']);
-            $phoneNumber = trim($_POST['telephone_phone_number']);
-            $roomId = (int)$_POST['telephone_room_id'];
-            $subscriberId = (int)$_POST['telephone_subscriber_id'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $request = new Request($_POST);
 
-            // Валидация данных
-            if (empty($name)) {
-                $message = 'Название телефона не может быть пустым';
-            } elseif (empty($phoneNumber)) {
-                $message = 'Номер телефона не может быть пустым';
-            } elseif (!preg_match('/^\d{6,15}$/', $phoneNumber)) {
-                $message = 'Номер телефона должен содержать от 6 до 15 цифр';
-            } elseif ($roomId <= 0) {
-                $message = 'Выберите помещение';
-            } elseif ($subscriberId <= 0) {
-                $message = 'Выберите абонента';
+            $middleware = new TrimMiddleware();
+            $request = $middleware->handle($request);
+
+            $data = $request->all();
+
+            $rules = [
+                'telephone_phone_number' => ['required', 'num', 'unique:telephones,phone_number'],
+                'telephone_room_id' => ['required']
+            ];
+
+            $messages = [
+                'required' => 'Поле :field не заполнено',
+                'num' => 'Поле :field не заполнено',
+                'unique' => 'Поле :field должно быть уникальным'
+            ];
+
+            $validator = new Validator($data, $rules, $messages);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $errorMessage = '';
+
+                foreach ($errors as $field => $messages) {
+                    foreach ($messages as $msg) {
+                        $errorMessage .= str_replace(':field', $this->getFieldLabel($field), $msg) . '<br>';
+                    }
+                }
+
+                $message = rtrim($errorMessage, '<br>');
             } else {
+                $phoneNumber = $data['telephone_phone_number'];
+                $roomId = (int)$data['telephone_room_id'];
+
                 Telephone::create([
-                    'name' => $name,
                     'phone_number' => $phoneNumber,
                     'room_id' => $roomId,
-                    'subscriber_id' => $subscriberId
                 ]);
+                $message = 'Телефон добавлен';
             }
         }
 
-        $telephones = Telephone::with(['room', 'subscriber'])->get();
+        $telephones = Telephone::with(['room'])->get();
         return (new View())->render('site.telephone', [
             'telephones' => $telephones,
             'rooms' => $rooms,
-            'subscribers' => $subscribers,
             'message' => $message
         ]);
     }
 
-
-    public function subscriber() : string
+    private function getFieldLabel(string $field): string
     {
-        $subscribers = Subscriber::all();
+        $labels = [
+            'telephone_phone_number' => 'Номер телефона',
+            'telephone_room_id' => 'Наименование помещения'
+        ];
+
+        return $labels[$field] ?? $field;
+    }
+
+
+    public function subscriber(): string
+    {
+        $subscribers = Subscriber::with(['subdivision', 'telephone'])->get();
+
 
         $counts = [];
         $subdivisions = Subdivision::all();
-        foreach ($subdivisions as $subdivision) {
-            $counts[$subdivision->id] = Subscriber::where('subdivision', $subdivision->id)->count();
+        $subdivisions = Subdivision::withCount('subscribers')->get();
+        $telephones = Telephone::whereNull('subscriber_id')->get();
+        $rooms = Room::withCount('subscribers')->get();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+                die('Ошибка безопасности: неверный CSRF‑токен');
+            }
+
+            $requiredFields = [
+                'subscriber_name',
+                'subscriber_surname',
+                'subscriber_patronymic',
+                'subscriber_date_of_birth',
+                'subscriber_subdivision_id'
+            ];
+
+            foreach ($requiredFields as $field) {
+                if (!isset($_POST[$field]) || empty(trim($_POST[$field]))) {
+                    die("Не заполнено обязательное поле: $field");
+                }
+            }
+
+            try {
+                $name = trim($_POST['subscriber_name']);
+                $surname = trim($_POST['subscriber_surname']);
+                $patronymic = trim($_POST['subscriber_patronymic']);
+                $date_of_birth = trim($_POST['subscriber_date_of_birth']);
+                $subdivision_id = (int)$_POST['subscriber_subdivision_id'];
+
+                if (!Subdivision::find($subdivision_id)) {
+                    die('Указанное подразделение не существует');
+                }
+
+                $subscriber = Subscriber::create([
+                    'name' => $name,
+                    'surname' => $surname,
+                    'patronymic' => $patronymic,
+                    'date_of_birth' => $date_of_birth,
+                    'subdivision_id' => $subdivision_id,
+                ]);
+
+                if (isset($_POST['phone_ids']) && is_array($_POST['phone_ids'])) {
+                    $selectedPhoneIds = array_map('intval', $_POST['phone_ids']);
+
+                    $availablePhones = Telephone::whereIn('id', $selectedPhoneIds)
+                        ->whereNull('subscriber_id')
+                        ->pluck('id')
+                        ->toArray();
+
+                    if (empty($availablePhones)) {
+                        die('Выбранные номера уже заняты');
+                    }
+
+                    // Обновляем только свободные номера
+                    Telephone::whereIn('id', $availablePhones)
+                        ->update(['subscriber_id' => $subscriber->id]);
+                }
+
+                header('Location: ' . $_SERVER['REQUEST_URI']);
+                exit;
+
+            } catch (\Exception $e) {
+                error_log('Ошибка создания абонента: ' . $e->getMessage());
+                error_log('Трассировка: ' . $e->getTraceAsString());
+                die('Произошла ошибка при создании абонента. Код ошибки: ' . $e->getCode() . '. Сообщение: ' . $e->getMessage());
+            }
         }
 
-        $roomCounts = [];
-        $rooms = Room::all();
-        foreach ($rooms as $room) {
-            $roomCounts[$room->id] = Subscriber::where('room', $room->id)->count();
+        $phonesByDepartment = [];
+        if (isset($_GET['department_id']) && !empty($_GET['department_id'])) {
+            $departmentId = (int)$_GET['department_id'];
+            $phonesByDepartment = Subscriber::with(['telephone', 'subdivision'])
+                ->where('subdivision_id', $departmentId)
+                ->get();
         }
 
         return (new View())->render('site.subscriber', [
-            'subscribers'  => $subscribers,
-            'counts'       => $counts,
+            'subscribers' => $subscribers,
+            'counts' => $counts,
             'subdivisions' => $subdivisions,
-            'roomCounts'   => $roomCounts,
-            'rooms'        => $rooms,
+            'telephones' => $telephones,
+            'phonesByDepartment' => $phonesByDepartment,
+            'rooms' => $rooms,
         ]);
     }
 
+
     public function user(): string
     {
-        // Обрабатываем POST‑запрос на обновление роли
+        // Обработка изменения роли
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role_id'])) {
             $userId = (int)$_POST['user_id'];
             $roleId = (int)$_POST['role_id'];
 
-            // Получаем текущего авторизованного пользователя
             $currentUser = Auth::user();
 
-            // Проверяем: если пользователь пытается изменить свою роль — запрещаем
             if ($currentUser && $userId === $currentUser->id) {
-                // Можно добавить сообщение об ошибке в сессию или передать в шаблон
                 $_SESSION['error'] = 'Вы не можете изменить свою собственную роль';
-
-
-                // Перенаправляем обратно на страницу
                 header('Location: /users');
                 exit;
             }
 
-            // Если это другой пользователь — обновляем роль
             $user = User::find($userId);
             if ($user) {
                 $user->updateRole($roleId);
             }
 
-            // После обработки делаем редирект
             header('Location: /users');
             exit;
         }
 
-        // Загружаем актуальные данные для отображения
+        // Загрузка данных для отображения
         $users = User::with(['role'])->get();
         $roles = Role::all();
 
         $error = $_SESSION['error'] ?? null;
-        unset($_SESSION['error']); // Очищаем сообщение после использования
+        unset($_SESSION['error']);
 
         return (new View())->render('site.user', [
             'users' => $users,
@@ -198,10 +297,12 @@ class Site
         ]);
     }
 
+
     public function main(): string
     {
         return new View('site.main', ['message' => 'У вас нет прав :(']);
     }
+
 
     public function signup(Request $request): string
     {
@@ -212,7 +313,7 @@ class Site
                 'login' => [
                     'required',
                     'unique:users,login',
-                    'length:5,15'
+                    'length:5'
                 ],
                 'password' => [
                     'required',
@@ -221,30 +322,39 @@ class Site
             ], [
                 'required' => 'Поле :field пусто',
                 'unique' => 'Поле :field должно быть уникально',
-                'length' => 'Поле :field должно быть от 5 символов',
+                'length' => 'Поле :field должно быть от :min символов',
             ]);
 
             if ($validator->fails()) {
                 $errors = $validator->errors();
                 $errorMessage = '';
-
                 foreach ($errors as $field => $messages) {
                     foreach ($messages as $message) {
                         $errorMessage .= $message . '<br>';
                     }
                 }
-
-                $errorMessage = rtrim($errorMessage, '; ');
-
                 return new View('site.signup', [
-                    'message' => $errorMessage,
+                    'message' => rtrim($errorMessage, '<br>'),
                     'data' => $data
                 ]);
             }
 
+            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['avatar'];
+                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $avatarName = time() . '_' . uniqid() . '.' . $extension;
+
+                $uploadPath = __DIR__ . '/../../public/uploads/avatars/' . $avatarName;
+
+                if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                    $data['avatar'] = $avatarName;
+                }
+            }
+
             try {
                 if (User::create($data)) {
-                    app()->route->redirect('/signup');
+                    app()->route->redirect('/login');
+                    return '';
                 } else {
                     return new View('site.signup', ['message' => 'Ошибка при создании пользователя']);
                 }
@@ -252,14 +362,11 @@ class Site
                 return new View('site.signup', ['message' => 'Произошла ошибка: ' . $e->getMessage()]);
             }
         }
-
         return new View('site.signup');
     }
 
-
     public function login(Request $request): string
     {
-        // Если просто обращение к странице, то отобразить форму
         if ($request->method === 'GET') {
             return new View('site.login');
         }
@@ -274,14 +381,13 @@ class Site
             } elseif ($user->role_id == 2) {
                 app()->route->redirect('/subscribers');
             } else {
-                // Например, если роль неизвестная, редирект на главную
-                app()->route->redirect('/main');
+                app()->route->redirect('/');
             }
         }
 
-        // Если аутентификация не удалась
         return new View('site.login', ['message' => 'Неправильные логин или пароль']);
     }
+
 
     public function logout(): void
     {

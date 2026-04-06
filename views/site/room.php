@@ -1,8 +1,15 @@
-<div class="form-container">
+<div class="adding">
+    <h1>Помещения</h1>
+    <button type="button" id="showFormBtn" class="btn">Добавить помещение</button>
+</div>
+
+<div class="form-container" id="justForm" style="display: none;">
+    <h4>Добавление помещения</h4>
     <form method="post" class="add-form">
-        <input type="text" name="room_name" placeholder="Название подразделения" required>
-        <input type="text" name="room_number_room" placeholder="Тип подразделения" required>
-        <input type="text" name="room_type" placeholder="Тип подразделения" required>
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+        <input type="text" name="room_name" placeholder="Название помещения" required>
+        <input type="text" name="room_number_room" placeholder="Номер помещения" required>
+        <input type="text" name="room_type" placeholder="Тип помещения" required>
         <select name="room_subdivision_id" id="subdivision_select" required>
             <option value="">Выберите подразделение</option>
             <?php foreach ($subdivisions as $subdivision): ?>
@@ -11,11 +18,10 @@
                 </option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="btn btn-primary">Добавить подразделение</button>
+        <button type="submit" class="btn btn-primary">Добавить помещение</button>
     </form>
 </div>
 
-<h1>Помещения</h1>
 <table border="2" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 60%; text-align: center;">
     <thead>
     <tr>
@@ -37,3 +43,10 @@
     ?>
     </tbody>
 </table>
+
+<script>
+    document.getElementById('showFormBtn').onclick = function() {
+        const form = document.getElementById('justForm');
+        form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+    };
+</script>

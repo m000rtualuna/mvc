@@ -2,18 +2,27 @@
 namespace Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+
 class Subscriber extends Model
 {
     use HasFactory;
     public $timestamps = false;
+
+    protected $fillable = ['name', 'surname', 'patronymic', 'date_of_birth', 'subdivision_id'];
 
     public static function countBySubdivision($subdivisionId)
     {
         return self::where('subdivision', $subdivisionId)->count();
     }
 
-    public static function countByRoom($roomId)
+    public function subdivision()
     {
-        return self::where('room', $roomId)->count();
+        return $this->belongsTo(Subdivision::class, 'subdivision_id');
     }
+
+    public function telephone()
+    {
+        return $this->hasMany(Telephone::class, 'subscriber_id', 'id');
+    }
+
 }

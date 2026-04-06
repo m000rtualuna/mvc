@@ -7,15 +7,16 @@ class Telephone extends Model
 {
     use HasFactory;
     public $timestamps = false;
-    protected $fillable = ['phone_number', 'room_id', 'subscriber_id'];
-
-    public function subscriber()
-    {
-        return $this->belongsTo(Subscriber::class, 'subscriber_id');
-    }
+    protected $fillable = ['phone_number', 'room_id'];
 
     public function room()
     {
         return $this->belongsTo(Room::class, 'room_id');
     }
+
+    public function subscriber()
+    {
+        return $this->belongsTo(Subscriber::class, 'subscriber_id', 'id');
+    }
+
 }

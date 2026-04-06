@@ -1,25 +1,30 @@
 {
-    "name": "m000rtualuna/mvc",
-    "description": "mvc",
-    "type": "project",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "diana",
-            "email": "m000rtualuna@gmail.com"
-        }
-    ],
-    "minimum-stability": "dev",
+  "name": "m000rtualuna/mvc",
+  "description": "mvc",
+  "type": "project",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "diana",
+      "email": "m000rtualuna@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev",
   "require": {
     "php": "^7.4 | ^8.0",
-        "illuminate/database": "10.x-dev",
-        "illuminate/events": "10.x-dev",
-        "nikic/fast-route": "^2.0@dev"
+    "illuminate/database": "10.x-dev",
+    "illuminate/events": "10.x-dev",
+    "nikic/fast-route": "^2.0@dev"
   },
   "autoload": {
     "psr-4": {
       "Src\\": "core/Src/",
-      "": "app/"
+      "": "app/",
+      "Validator\\": "packages/MyValidators/src/Validator/",
+      "Validators\\": "packages/MyValidators/src/Validators/"
     }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^13.0@dev"
   }
 }

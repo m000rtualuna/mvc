@@ -12,4 +12,16 @@ class Room extends Model
     {
         return $this->belongsTo(Subdivision::class, 'subdivision_id');
     }
+
+    public function subscribers()
+    {
+        return $this->hasManyThrough(
+            Subscriber::class,
+            Telephone::class,
+            'room_id',
+            'id',
+            'id',
+            'subscriber_id'
+        );
+    }
 }

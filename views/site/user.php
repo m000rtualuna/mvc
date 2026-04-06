@@ -13,6 +13,7 @@
             <td>
                 <form method="POST" action="/users">
                     <input type="hidden" name="user_id" value="<?php echo $user->id; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <select name="role_id" onchange="this.form.submit()" style="width: 100%;">
                         <?php foreach ($roles as $role): ?>
                             <option value="<?php echo htmlspecialchars($role->id); ?>"
