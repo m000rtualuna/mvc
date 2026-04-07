@@ -48,7 +48,7 @@ User::where('login', $userData['login'])->delete();
     protected function setUp(): void
     {
 //Установка переменной среды
-        $_SERVER['DOCUMENT_ROOT'] = 'Z:/home/mvc';
+        $_SERVER['DOCUMENT_ROOT'] = 'home/mvc';
 
 //Создаем экземпляр приложения
         $GLOBALS['app'] = new Src\Application(new Src\Settings([
