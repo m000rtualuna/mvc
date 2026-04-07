@@ -47,15 +47,26 @@ User::where('login', $userData['login'])->delete();
 
     protected function setUp(): void
     {
-//Установка переменной среды
-        $_SERVER['DOCUMENT_ROOT'] = 'home/mvc';
+        // установка переменной среды
+        $_SERVER['DOCUMENT_ROOT'] = 'C:/OSPanel/home/mvc';
 
-//Создаем экземпляр приложения
-        $GLOBALS['app'] = new Src\Application(new Src\Settings([
-            'app' => include $_SERVER['DOCUMENT_ROOT'] . '/config/app.php',
-            'db' => include $_SERVER['DOCUMENT_ROOT'] . '/config/db.php',
-            'path' => include $_SERVER['DOCUMENT_ROOT'] . '/config/path.php',
-        ]));
+        $config = [
+            'app'   => include $_SERVER['DOCUMENT_ROOT'] . '/config/app.php',
+            'db'    => include $_SERVER['DOCUMENT_ROOT'] . '/config/db.php',
+            'path'  => include $_SERVER['DOCUMENT_ROOT'] . '/config/path.php',
+        ];
+
+        if (isset($config['app']['providers'])) {
+            $config['providers'] = $config['app']['providers'];
+        }
+
+        $GLOBALS['app'] = new Src\Application($config);
+
+        $app = $GLOBALS['app'];
+
+        $settings = new Src\Settings($config);
+        $app->bind('settings', $settings);
+
 
 //Глобальная функция для доступа к объекту приложения
         if (!function_exists('app')) {
