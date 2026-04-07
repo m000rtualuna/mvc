@@ -46,22 +46,31 @@ class View
         {
 
 //Импортирует переменные из массива в текущую таблицу символов
-extract($data, EXTR_PREFIX_SAME, '');
+            extract($data, EXTR_PREFIX_SAME, '');
 
 //Включение буферизации вывода
-ob_start();
-require $path;
+            ob_start();
+            require $path;
 
 //Помещаем буфер в переменную и очищаем его
-$content = ob_get_clean();
+            $content = ob_get_clean();
 
 //Возвращаем собранную страницу
-return require($this->getPathToMain());
-}
+            return require($this->getPathToMain());
+        }
         throw new Exception('Error render');
     }
     public function __toString(): string
     {
         return $this->render($this->view, $this->data);
+    }
+
+    public function toJSON(array $data = [], int $code = 200): void
+    {
+        header_remove();
+        header("Content-Type: application/json; charset=utf-8");
+        http_response_code($code);
+        echo json_encode($data, JSON_UNESCAPED_UNICODE);
+        exit();
     }
 }

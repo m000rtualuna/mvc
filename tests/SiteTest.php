@@ -87,4 +87,57 @@ User::where('login', $userData['login'])->delete();
             ],
         ];
     }
+
+
+    public function testSubdivisionCreation(string $httpMethod, array $subdivisionData, string $expectedMessage): void
+    {
+        // Создаем заглушку Request
+        $request = $this->createMock(\Src\Request::class);
+        $request->expects($this->any())
+            ->method('all')
+            ->willReturn($subdivisionData);
+        $request->method = $httpMethod;
+
+        // Вызываем контроллер
+        $response = (new \Controller\Site())->subdivision($request);
+
+        // Если ожидается сообщение об ошибке
+        if (!empty($response)) {
+            $messageRegex = '/' . preg_quote($expectedMessage, '/') . '/';
+            $this->expectOutputRegex($messageRegex);
+            return;
+        }
+
+        // Проверяем, что подразделение добавилось
+        // Считаем, что есть модель Subdivision
+        $exists = \Model\Subdivision::where('name', $subdivisionData['name'])->exists();
+        $this->assertTrue($exists, "Subdivision with name '{$subdivisionData['name']}' should exist in DB.");
+
+        // Удаляем созданное подразделение для чистоты тестов
+        \Model\Subdivision::where('name', $subdivisionData['name'])->delete();
+
+        // Проверка редиректа при успехе
+        $headers = xdebug_get_headers();
+        $this->assertContains($expectedMessage, $headers);
+    }
+
+    public static function subdivisionProvider(): array
+    {
+        return [
+            ['GET', ['name' => '', 'type' => ''],
+                '<h3></h3>'
+            ],
+            ['POST', ['name' => '', 'type' => ''],
+                '<h3>{"name":["Поле name пусто"],"type":["Поле type пусто"]}</h3>',
+            ],
+            ['POST', ['name' => 'name is busy',
+                'type' => 'admin'],
+                '<h3>{"name":["Поле name должно быть уникально"]}</h3>',
+            ],
+            ['POST', ['name' => md5(time()),
+                'type' => 'type'],
+                'Location: /mvc/subdivisions',
+            ],
+        ];
+    }
 }
