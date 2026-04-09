@@ -23,20 +23,16 @@ class Site
 
         $httpMethod = $request->method ?? $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-        $middleware = new TrimMiddleware();
-        $request = $middleware->handle($request);
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $request->all();
 
             $rules = [
-                'subdivision_name' => ['required', 'lang', 'unique:subdivisions,name'],
-                'subdivision_type' => ['required', 'lang'],
+                'subdivision_name' => ['required', 'unique:subdivisions,name'],
+                'subdivision_type' => ['required'],
             ];
 
             $messages = [
                 'required' => 'Поле :field не заполнено',
-                'lang' => 'Поле :field должно содержать только кириллицу',
                 'unique' => 'Поле :field должно быть уникальным'
             ];
 
@@ -385,8 +381,8 @@ class Site
             }
             if (User::create($request->all())) {
                 header('Location: /login');
-                exit; // гарантированно останавливаем выполнение
-                // app()->route->redirect('/login'); // можно убрать или оставить как запасной вариант
+                exit;
+                // app()->route->redirect('/login');
             }
         }
         return new View('site.signup');
@@ -398,7 +394,20 @@ class Site
             return new View('site.login');
         }
 
-        // Пытаемся аутентифицировать пользователя
+
+        $validator = new Validator($request->all(), [
+            'login' => ['required'],
+            'password' => ['required']
+        ], [
+            'required' => 'Поле :field пусто'
+        ]);
+
+        if ($validator->fails()) {
+            return new View('site.login', [
+                'message' => json_encode($validator->errors(), JSON_UNESCAPED_UNICODE)
+            ]);
+        }
+
         if (Auth::attempt($request->all())) {
             $user = Auth::user();
 
@@ -414,7 +423,6 @@ class Site
 
         return new View('site.login', ['message' => 'Неправильные логин или пароль']);
     }
-
 
     public function logout(): void
     {

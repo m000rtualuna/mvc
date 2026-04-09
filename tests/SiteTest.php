@@ -42,43 +42,34 @@ class SiteTest extends TestCase
     }
 
 
-    #[DataProvider('additionProvider')]
+    #[DataProvider('signupProvider')]
     #[RunInSeparateProcess]
     public function testSignup(string $httpMethod, array $userData, string $message): void
     {
-//Выбираем занятый логин из базы данных
         if ($userData['login'] === 'login is busy') {
             $userData['login'] = User::get()->first()->login;
         }
 
-// Создаем заглушку для класса Request.
         $request = $this->createMock(\Src\Request::class);
-// Переопределяем метод all() и свойство method
         $request->expects($this->any())
             ->method('all')
             ->willReturn($userData);
         $request->method = $httpMethod;
 
-//Сохраняем результат работы метода в переменную
         $result = (new \Controller\Site())->signup($request);
 
         if (!empty($result)) {
-//Проверяем варианты с ошибками валидации
             $message = '/' . preg_quote($message, '/') . '/';
             $this->expectOutputRegex($message);
             return;
         }
 
-//Проверяем добавился ли пользователь в базу данных
         $this->assertTrue((bool)User::where('login', $userData['login'])->count());
-//Удаляем созданного пользователя из базы данных
-User::where('login', $userData['login'])->delete();
+        User::where('login', $userData['login'])->delete();
 
-}
+    }
 
-
-//Метод, возвращающий набор тестовых данных
-    public static function additionProvider(): array
+    public static function signupProvider(): array
     {
         return [
             ['GET', ['login' => '', 'password' => ''],
@@ -95,41 +86,28 @@ User::where('login', $userData['login'])->delete();
     }
 
 
-
-
-
     #[DataProvider('loginProvider')]
     #[RunInSeparateProcess]
     public function testlogin(string $httpMethod, array $userData, string $message): void
     {
-
-// Создаем заглушку для класса Request.
         $request = $this->createMock(\Src\Request::class);
-// Переопределяем метод all() и свойство method
         $request->expects($this->any())
             ->method('all')
             ->willReturn($userData);
         $request->method = $httpMethod;
 
-//Сохраняем результат работы метода в переменную
         $result = (new \Controller\Site())->login($request);
 
         if (!empty($result)) {
-//Проверяем варианты с ошибками валидации
             $message = '/' . preg_quote($message, '/') . '/';
             $this->expectOutputRegex($message);
             return;
         }
 
-//Проверяем добавился ли пользователь в базу данных
         $this->assertTrue((bool)User::where('login', $userData['login'])->count());
-//Удаляем созданного пользователя из базы данных
         User::where('login', $userData['login'])->delete();
-
     }
 
-
-//Метод, возвращающий набор тестовых данных
     public static function loginProvider(): array
     {
         return [
@@ -141,4 +119,46 @@ User::where('login', $userData['login'])->delete();
             ]
         ];
     }
+
+
+    #[DataProvider('subdivisionsProvider')]
+    #[RunInSeparateProcess]
+    public function testSubdivisions(string $httpMethod, array $subdivisionData, string $message): void
+    {
+        $csrfToken = app()->auth::generateCSRF();
+        $subdivisionData['csrf_token'] = $csrfToken;
+
+        if ($subdivisionData['subdivision_name'] === 'subdivision_name is busy') {
+            $subdivisionData['subdivision_name'] = Subdivision::get()->first()->name;
+        }
+
+        $request = $this->createMock(\Src\Request::class);
+        $request->expects($this->any())
+            ->method('all')
+            ->willReturn($subdivisionData);
+        $request->method = $httpMethod;
+
+        $_SERVER['REQUEST_METHOD'] = $httpMethod;
+        $_SESSION['csrf_token'] = $csrfToken;
+
+        $result = (new \Controller\Site())->subdivision($request);
+
+        if (!empty($message)) {
+            $this->assertStringContainsString($message, $result);
+            return;
+        }
+
+        $this->assertFalse((bool)Subdivision::where('name', $subdivisionData['subdivision_name'])->count());
+    }
+
+
+    public static function subdivisionsProvider(): array
+    {
+        return [
+            ['GET', ['subdivision_name' => '', 'subdivision_type' => ''], ''],
+            ['POST', ['subdivision_name' => '', 'subdivision_type' => 'ещкере'], 'Поле subdivision_name не заполнено'],
+            ['POST', ['subdivision_name' => 'name is busy', 'subdivision_type' => 'не ещкере'], 'Поле subdivision_name должно быть уникальным'],
+        ];
+    }
+
 }
