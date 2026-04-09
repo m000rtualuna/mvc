@@ -2,6 +2,7 @@
 namespace Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Model\Telephone;
 
 class Subscriber extends Model
 {
@@ -22,6 +23,6 @@ class Subscriber extends Model
 
     public function telephone()
     {
-        return $this->hasMany(Telephone::class);
+        return $this->hasMany(Telephone::class, 'subscriber_id');
     }
 }

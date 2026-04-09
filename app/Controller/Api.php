@@ -1,13 +1,14 @@
 <?php
 namespace Controller;
 use Model\Subdivision;
+use Model\Subscriber;
+use Model\Telephone;
 use Model\User;
 use Src\Request;
 use Src\View;
 
 class Api
 {
-
     public function index(): void
     {
         $subdivisions = Subdivision::all()->toArray();
@@ -19,29 +20,77 @@ class Api
         (new View())->toJSON($request->all());
     }
 
-    // apiii
-    public function login(Request $request): void
+
+    public function authorize()
     {
-        $data = $request->all();
-        $login = $data['login'] ?? '';
-        $password = $data['password'] ?? '';
+        $headers = getallheaders();
 
-        $user = User::where('login', $login)->first();
-
-        if ($user && password_verify($password, $user->password)) {
-            // Генерируем JWT (без правок БД)
-            $header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
-            $payload = base64_encode(json_encode([
-                'user_id' => $user->id,
-                'iat' => time() // Делает токен уникальным при каждом входе
-            ]));
-            $secret = 'any_secret_key_here'; // Просто строка
-            $signature = base64_encode(hash_hmac('sha256', "$header.$payload", $secret, true));
-
-            (new View())->toJSON(['token' => "$header.$payload.$signature"]);
-            return;
+        if (!isset($headers['Authorization'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized: Missing Authorization header']);
+            exit;
         }
 
-        (new View())->toJSON(['error' => 'Unauthorized'], 401);
+        $authHeader = $headers['Authorization'];
+
+        if (!preg_match('/^Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid authorization header format']);
+            exit;
+        }
+
+        $token = $matches[1];
+        $validToken = 'tokkk';
+
+        if ($token !== $validToken) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid token']);
+            exit;
+        }
+
+        return [
+            'id' => 1,
+            'name' => 'Пользователь',
+            'role_id' => 2
+        ];
+    }
+
+    public function login()
+    {
+        $user = $this->authorize();
+        $sessionToken = bin2hex(random_bytes(16));
+
+        echo json_encode([
+            'message' => 'Вход выполнен успешно',
+            'session_token' => $sessionToken
+        ]);
+    }
+
+
+    public function getSubscribers()
+    {
+        $subscribers = Subscriber::with('telephone')->get();
+        $result = [];
+
+        foreach ($subscribers as $subscriber) {
+            $phoneNumbers = [];
+
+            if ($subscriber->telephone) {
+                $phoneNumbers = array_map(function($tel) {
+                    return $tel['phone_number'];
+                }, $subscriber->telephone->toArray());
+            }
+
+            $result[] = [
+                'id' => $subscriber->id,
+                'name' => $subscriber->name,
+                'surname' => $subscriber->surname,
+                'patronymic' => $subscriber->patronymic,
+                'date_of_birth' => $subscriber->date_of_birth,
+                'subdivision_id' => $subscriber->subdivision_id,
+                'telephones' => $phoneNumbers
+            ];
+        }
+        (new View())->toJSON($result);
     }
 }
