@@ -36,10 +36,6 @@
         if (app()->auth->check()) {
             $user = app()->auth->user();
             echo '<p>Этот пользователь: ' . htmlspecialchars($user->login) . '</p>';
-
-            if (!empty($user->avatar)) {
-                echo '<img src="/uploads/avatars/' . htmlspecialchars($user->avatar) . '" alt="Avatar" width="100" height="100">';
-            }
         }
         ?>
     </div>

@@ -14,9 +14,4 @@ class Telephone extends Model
         return $this->belongsTo(Room::class, 'room_id');
     }
 
-    public function subscriber()
-    {
-        return $this->belongsTo(Subscriber::class, 'subscriber_id', 'id');
-    }
-
 }

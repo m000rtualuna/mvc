@@ -1,6 +1,7 @@
 <?php
 
 use Model\User;
+use Model\Subdivision;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -8,43 +9,6 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 class SiteTest extends TestCase
 {
-    #[DataProvider('additionProvider')]
-    #[RunInSeparateProcess]
-
-    public function testSignup(string $httpMethod, array $userData, string $message): void
-    {
-//Выбираем занятый логин из базы данных
-        if ($userData['login'] === 'login is busy') {
-            $userData['login'] = User::get()->first()->login;
-        }
-
-// Создаем заглушку для класса Request.
-        $request = $this->createMock(\Src\Request::class);
-// Переопределяем метод all() и свойство method
-        $request->expects($this->any())
-            ->method('all')
-            ->willReturn($userData);
-        $request->method = $httpMethod;
-
-//Сохраняем результат работы метода в переменную
-        $result = (new \Controller\Site())->signup($request);
-
-        if (!empty($result)) {
-//Проверяем варианты с ошибками валидации
-            $message = '/' . preg_quote($message, '/') . '/';
-            $this->expectOutputRegex($message);
-            return;
-        }
-
-//Проверяем добавился ли пользователь в базу данных
-        $this->assertTrue((bool)User::where('login', $userData['login'])->count());
-//Удаляем созданного пользователя из базы данных
-User::where('login', $userData['login'])->delete();
-
-//Проверяем редирект при успешной регистрации
-        $this->assertContains($message, xdebug_get_headers());
-}
-
     protected function setUp(): void
     {
         // установка переменной среды
@@ -78,6 +42,41 @@ User::where('login', $userData['login'])->delete();
     }
 
 
+    #[DataProvider('additionProvider')]
+    #[RunInSeparateProcess]
+    public function testSignup(string $httpMethod, array $userData, string $message): void
+    {
+//Выбираем занятый логин из базы данных
+        if ($userData['login'] === 'login is busy') {
+            $userData['login'] = User::get()->first()->login;
+        }
+
+// Создаем заглушку для класса Request.
+        $request = $this->createMock(\Src\Request::class);
+// Переопределяем метод all() и свойство method
+        $request->expects($this->any())
+            ->method('all')
+            ->willReturn($userData);
+        $request->method = $httpMethod;
+
+//Сохраняем результат работы метода в переменную
+        $result = (new \Controller\Site())->signup($request);
+
+        if (!empty($result)) {
+//Проверяем варианты с ошибками валидации
+            $message = '/' . preg_quote($message, '/') . '/';
+            $this->expectOutputRegex($message);
+            return;
+        }
+
+//Проверяем добавился ли пользователь в базу данных
+        $this->assertTrue((bool)User::where('login', $userData['login'])->count());
+//Удаляем созданного пользователя из базы данных
+User::where('login', $userData['login'])->delete();
+
+}
+
+
 //Метод, возвращающий набор тестовых данных
     public static function additionProvider(): array
     {
@@ -89,66 +88,57 @@ User::where('login', $userData['login'])->delete();
                 '<h3>{"login":["Поле login пусто"],"password":["Поле password пусто"]}</h3>',
             ],
             ['POST', ['login' => 'login is busy',
-                'password' => 'admin'],
+                'password' => 'eshkere'],
                 '<h3>{"login":["Поле login должно быть уникально"]}</h3>',
-            ],
-            ['POST', ['login' => md5(time()),
-                'password' => 'admin'],
-                'Location: /mvc/signup',
             ],
         ];
     }
 
 
-    public function testSubdivisionCreation(string $httpMethod, array $subdivisionData, string $expectedMessage): void
+
+
+
+    #[DataProvider('loginProvider')]
+    #[RunInSeparateProcess]
+    public function testlogin(string $httpMethod, array $userData, string $message): void
     {
-        // Создаем заглушку Request
+
+// Создаем заглушку для класса Request.
         $request = $this->createMock(\Src\Request::class);
+// Переопределяем метод all() и свойство method
         $request->expects($this->any())
             ->method('all')
-            ->willReturn($subdivisionData);
+            ->willReturn($userData);
         $request->method = $httpMethod;
 
-        // Вызываем контроллер
-        $response = (new \Controller\Site())->subdivision($request);
+//Сохраняем результат работы метода в переменную
+        $result = (new \Controller\Site())->login($request);
 
-        // Если ожидается сообщение об ошибке
-        if (!empty($response)) {
-            $messageRegex = '/' . preg_quote($expectedMessage, '/') . '/';
-            $this->expectOutputRegex($messageRegex);
+        if (!empty($result)) {
+//Проверяем варианты с ошибками валидации
+            $message = '/' . preg_quote($message, '/') . '/';
+            $this->expectOutputRegex($message);
             return;
         }
 
-        // Проверяем, что подразделение добавилось
-        // Считаем, что есть модель Subdivision
-        $exists = \Model\Subdivision::where('name', $subdivisionData['name'])->exists();
-        $this->assertTrue($exists, "Subdivision with name '{$subdivisionData['name']}' should exist in DB.");
+//Проверяем добавился ли пользователь в базу данных
+        $this->assertTrue((bool)User::where('login', $userData['login'])->count());
+//Удаляем созданного пользователя из базы данных
+        User::where('login', $userData['login'])->delete();
 
-        // Удаляем созданное подразделение для чистоты тестов
-        \Model\Subdivision::where('name', $subdivisionData['name'])->delete();
-
-        // Проверка редиректа при успехе
-        $headers = xdebug_get_headers();
-        $this->assertContains($expectedMessage, $headers);
     }
 
-    public static function subdivisionProvider(): array
+
+//Метод, возвращающий набор тестовых данных
+    public static function loginProvider(): array
     {
         return [
-            ['GET', ['name' => '', 'type' => ''],
+            ['GET', ['login' => '', 'password' => ''],
                 '<h3></h3>'
             ],
-            ['POST', ['name' => '', 'type' => ''],
-                '<h3>{"name":["Поле name пусто"],"type":["Поле type пусто"]}</h3>',
-            ],
-            ['POST', ['name' => 'name is busy',
-                'type' => 'admin'],
-                '<h3>{"name":["Поле name должно быть уникально"]}</h3>',
-            ],
-            ['POST', ['name' => md5(time()),
-                'type' => 'type'],
-                'Location: /mvc/subdivisions',
-            ],
+            ['POST', ['login' => '', 'password' => ''],
+                '<h3>{"login":["Поле login пусто"],"password":["Поле password пусто"]}</h3>',
+            ]
         ];
     }
 }

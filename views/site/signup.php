@@ -3,7 +3,7 @@
 
     <h3><?= $message ?? ''; ?></h3>
 
-    <form method="post" enctype="multipart/form-data">
+    <form method="post">
         <input name="csrf_token" type="hidden" value="<?= app()->auth::generateCSRF() ?>"/>
         <div class="form-el">
             <label>Логин
@@ -15,7 +15,6 @@
                 <input type="password" name="password">
             </label>
         </div>
-        <input type="file" name="avatar" accept="image/*">
         <button class="btn">Зарегистрироваться</button>
     </form>
 </div>

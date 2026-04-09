@@ -15,7 +15,7 @@
 
 
 <?php if ($message): ?>
-    <p><?= $message ?></p>
+    <h3><?= $message ?? ''; ?></h3>
 <?php endif; ?>
 
 <table border="2" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 60%; text-align: center;">

@@ -22,6 +22,6 @@ class Subscriber extends Model
 
     public function telephone()
     {
-        return $this->hasOne(Telephone::class);
+        return $this->hasMany(Telephone::class);
     }
 }

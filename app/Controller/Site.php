@@ -17,11 +17,11 @@ use Middlewares\TrimMiddleware;
 class Site
 {
 
-    public function subdivision(): string
+    public function subdivision(Request $request): string
     {
         $message = '';
 
-        $request = new Request($_POST);
+        $httpMethod = $request->method ?? $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         $middleware = new TrimMiddleware();
         $request = $middleware->handle($request);
@@ -31,7 +31,7 @@ class Site
 
             $rules = [
                 'subdivision_name' => ['required', 'lang', 'unique:subdivisions,name'],
-                'subdivision_type' => ['required', 'lang', 'unique:subdivisions,type'],
+                'subdivision_type' => ['required', 'lang'],
             ];
 
             $messages = [
@@ -72,6 +72,7 @@ class Site
             'message' => $message
         ]);
     }
+
 
     public function room(): string
     {
@@ -130,6 +131,7 @@ class Site
         ]);
     }
 
+
     public function telephone(): string
     {
         $message = '';
@@ -150,7 +152,7 @@ class Site
 
             $messages = [
                 'required' => 'Поле :field не заполнено',
-                'num' => 'Поле :field не заполнено',
+                'num' => 'Поле :field может содержать только цифры',
                 'unique' => 'Поле :field должно быть уникальным'
             ];
 
@@ -196,6 +198,7 @@ class Site
 
         return $labels[$field] ?? $field;
     }
+
 
     public function subscriber(): string
     {
@@ -300,7 +303,6 @@ class Site
             }
         }
 
-        // Остальной код без изменений
         $phonesByDepartment = [];
         if (isset($_GET['department_id']) && !empty($_GET['department_id'])) {
             $departmentId = (int)$_GET['department_id'];
@@ -319,6 +321,7 @@ class Site
             'message' => $message,
         ]);
     }
+
 
     public function user(): string
     {
@@ -361,66 +364,29 @@ class Site
 
     public function main(): string
     {
-        return new View('site.main', ['message' => 'У вас нет прав :(']);
+        return new View('site.main', ['message' => 'Здесь пусто :(']);
     }
 
 
     public function signup(Request $request): string
     {
         if ($request->method === 'POST') {
-            $data = $request->all();
-
-            $validator = new Validator($data, [
-                'login' => [
-                    'required',
-                    'unique:users,login',
-                    'length:5'
-                ],
-                'password' => [
-                    'required',
-                    'length:5'
-                ]
+            $validator = new Validator($request->all(), [
+                'login' => ['required', 'unique:users,login'],
+                'password' => ['required']
             ], [
                 'required' => 'Поле :field пусто',
-                'unique' => 'Поле :field должно быть уникально',
-                'length' => 'Поле :field должно быть от :min символов',
+                'unique' => 'Поле :field должно быть уникально'
             ]);
-
-            if ($validator->fails()) {
-                $errors = $validator->errors();
-                $errorMessage = '';
-                foreach ($errors as $field => $messages) {
-                    foreach ($messages as $message) {
-                        $errorMessage .= $message . '<br>';
-                    }
-                }
-                return new View('site.signup', [
-                    'message' => rtrim($errorMessage, '<br>'),
-                    'data' => $data
-                ]);
+            if($validator->fails()){
+                return new View('site.signup',
+                    ['message' => json_encode($validator->errors(),
+                        JSON_UNESCAPED_UNICODE)]);
             }
-
-            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES['avatar'];
-                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $avatarName = time() . '_' . uniqid() . '.' . $extension;
-
-                $uploadPath = __DIR__ . '/../../public/uploads/avatars/' . $avatarName;
-
-                if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                    $data['avatar'] = $avatarName;
-                }
-            }
-
-            try {
-                if (User::create($data)) {
-                    app()->route->redirect('/login');
-                    return '';
-                } else {
-                    return new View('site.signup', ['message' => 'Ошибка при создании пользователя']);
-                }
-            } catch (\Exception $e) {
-                return new View('site.signup', ['message' => 'Произошла ошибка: ' . $e->getMessage()]);
+            if (User::create($request->all())) {
+                header('Location: /login');
+                exit; // гарантированно останавливаем выполнение
+                // app()->route->redirect('/login'); // можно убрать или оставить как запасной вариант
             }
         }
         return new View('site.signup');
