@@ -21,7 +21,7 @@ class Api
     }
 
 
-    public function authorize()
+    public function login()
     {
         $headers = getallheaders();
 
@@ -55,20 +55,16 @@ class Api
         ];
     }
 
-    public function login()
-    {
-        $user = $this->authorize();
-        $sessionToken = bin2hex(random_bytes(16));
-
-        echo json_encode([
-            'message' => 'Вход выполнен успешно',
-            'session_token' => $sessionToken
-        ]);
-    }
-
-
     public function getSubscribers()
     {
+
+        $headers = getallheaders();
+        if (!isset($headers['Authorization']) || $headers['Authorization'] !== 'Bearer tokkk') {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            exit;
+        }
+
         $subscribers = Subscriber::with('telephone')->get();
         $result = [];
 

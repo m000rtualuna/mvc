@@ -156,8 +156,8 @@ class SiteTest extends TestCase
     {
         return [
             ['GET', ['subdivision_name' => '', 'subdivision_type' => ''], ''],
-            ['POST', ['subdivision_name' => '', 'subdivision_type' => 'ещкере'], 'Поле subdivision_name не заполнено'],
-            ['POST', ['subdivision_name' => 'name is busy', 'subdivision_type' => 'не ещкере'], 'Поле subdivision_name должно быть уникальным'],
+            ['POST', ['subdivision_name' => '', 'subdivision_type' => 'ещкере'], '<h3>Поле subdivision_name не заполнено</h3>'],
+            ['POST', ['subdivision_name' => 'name is busy', 'subdivision_type' => 'не ещкере'], '<h3>Поле subdivision_name должно быть уникальным</h3>'],
         ];
     }
 

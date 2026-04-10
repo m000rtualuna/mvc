@@ -66,6 +66,7 @@ class Site
         return (new View())->render('site.subdivision', [
             'subdivisions' => $subdivisions,
             'message' => $message
+
         ]);
     }
 
@@ -343,7 +344,6 @@ class Site
             exit;
         }
 
-        // Загрузка данных для отображения
         $users = User::with(['role'])->get();
         $roles = Role::all();
 
