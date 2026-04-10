@@ -15,9 +15,24 @@ class Api
         (new View())->toJSON($subdivisions);
     }
 
+
     public function echo(Request $request): void
     {
         (new View())->toJSON($request->all());
+    }
+
+
+
+    public function api_token(Request $request): void
+    {
+        $token = \Src\Session::get('api_token');
+
+        if ($token) {
+            (new View())->toJSON(['api_token' => $token]);
+        } else {
+            http_response_code(401);
+            (new View())->toJSON(['error' => 'not authorized']);
+        }
     }
 
 
@@ -48,12 +63,14 @@ class Api
             exit;
         }
 
-        return [
-            'id' => 1,
-            'name' => 'Пользователь',
-            'role_id' => 2
-        ];
+        $sessionToken = bin2hex(random_bytes(16));
+        \Src\Session::set('api_token', $sessionToken);
+
+        echo json_encode([
+            'session_token' => $sessionToken
+        ]);
     }
+
 
     public function getSubscribers()
     {
